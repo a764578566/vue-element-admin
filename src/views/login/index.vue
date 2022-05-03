@@ -45,7 +45,7 @@
         </el-form-item>
       </el-tooltip>
 
-      <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
+      <el-button :loading="loading" type="primary" style="width:100%;height:50px;margin-bottom:30px;" @click.native.prevent="handleLogin">Login</el-button>
 
       <div style="position:relative">
         <div class="tips">
@@ -98,7 +98,7 @@ export default {
     return {
       loginForm: {
         username: 'admin',
-        password: ''
+        password: 'Joey_Pwd'
       },
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
