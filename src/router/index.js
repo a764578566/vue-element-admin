@@ -98,12 +98,13 @@ export const constantRoutes = [
   {
     path: '/member',
     component: Layout,
+    hidden: true,
     children: [
       {
         path: 'recharge',
         component: () => import('@/views/member/recharge'),
         name: 'member',
-        meta: { title: '会员储值', icon: 'user', affix: true }
+        meta: { title: '会员储值', icon: 'user', affix: false }
       }
     ]
   },
@@ -116,6 +117,29 @@ export const constantRoutes = [
         component: () => import('@/views/order/index'),
         name: 'order',
         meta: { title: '订单管理', icon: 'user', affix: true }
+      }
+    ]
+  },
+  {
+    path: '/base',
+    component: Layout,
+    name: '基础信息',
+    meta: {
+      title: '基础信息',
+      icon: 'lock'
+    },
+    children: [
+      {
+        path: 'project',
+        component: () => import('@/views/base/project'),
+        name: 'project',
+        meta: { title: '项目', icon: 'user', affix: false }
+      },
+      {
+        path: 'product',
+        component: () => import('@/views/base/product'),
+        name: 'product',
+        meta: { title: '产品', icon: 'user', affix: false }
       }
     ]
   },

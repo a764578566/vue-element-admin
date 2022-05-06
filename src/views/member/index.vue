@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-button type="primary" @click="handleAddMember">新增会员</el-button>
     <el-table :data="members">
-      <el-table-column fixed prop="index" align="center" label="序列号" width="60">
+      <el-table-column fixed prop="index" align="center" label="序列号" width="80">
         <template slot-scope="scope">
           {{ scope.$index+1 }}
         </template>
@@ -34,17 +34,56 @@
         <template slot-scope="scope">
           {{ scope.row.sex == 1 ? "女" : "男" }}
         </template></el-table-column>
-      <el-table-column prop="remark" label="备注" width="300">
+      <el-table-column prop="account" label="余额" width="100">
+        <template slot-scope="scope">
+          {{ scope.row.account }}
+        </template></el-table-column>
+      <el-table-column prop="remark" label="备注" width="200">
         <template slot-scope="scope">
           {{ scope.row.remark }}
         </template></el-table-column>
-      <el-table-column fixed="right" label="操作" width="150">
+      <el-table-column fixed="right" label="操作" width="250">
         <template slot-scope="scope">
+          <el-button type="primary" size="small" @click="handlePutmoney(scope.row)">充值</el-button>
           <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
           <el-button type="danger" size="small" @click="handleDelete(scope)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
+    <div class="block">
+      <el-pagination :hide-on-single-page="false" background layout="total, sizes, prev, pager, next, jumper" :current-page="currentPage" :page-sizes="[10, 20, 50, 100]" :page-size="10" :total="pageList.total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+    </div>
+    <el-dialog :visible.sync="putMoneyDialogVisible" :title="充值">
+      <el-form :model="membermoney" label-width="80px" label-position="left">
+        <el-form-item v-if="false" label="key">
+          <el-input v-model="membermoney.memberGUID" />
+        </el-form-item>
+        <el-form-item label="会员编码">
+          <el-input v-model="membermoney.memberCode" disabled />
+        </el-form-item>
+        <el-form-item label="会员名称">
+          <el-input v-model="membermoney.memberName" disabled />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="membermoney.phone" disabled />
+        </el-form-item>
+        <el-form-item label="充值金额">
+          <el-input v-model="membermoney.putMoney" placeholder="充值金额" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input
+            v-model="membermoney.remark"
+            :autosize="{ minRows: 2, maxRows: 4}"
+            type="textarea"
+            placeholder="备注"
+          />
+        </el-form-item>
+      </el-form>
+      <div style="text-align:right;">
+        <el-button type="danger" @click="putMoneyDialogVisible=false">取消</el-button>
+        <el-button type="primary" @click="confirmPutmoney">确定</el-button>
+      </div>
+    </el-dialog>
     <el-dialog :visible.sync="dialogVisible" :title="dialogType==='edit'?'编辑会员':'新增会员'">
       <el-form :model="member" label-width="80px" label-position="left">
         <el-form-item label="会员编码">
@@ -75,7 +114,7 @@
       </el-form>
       <div style="text-align:right;">
         <el-button type="danger" @click="dialogVisible=false">取消</el-button>
-        <el-button type="primary" @click="confirmRole">确定</el-button>
+        <el-button type="primary" @click="confirmMember">确定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -83,7 +122,7 @@
 
 <script>
 import { deepClone } from '@/utils'
-import { getMembers, getMemberCode, addMember, deleteMember, updateMember } from '@/api/member'
+import { getMemberCode, addMember, deleteMember, updateMember, putMoney, pageList } from '@/api/member'
 import moment from 'moment'
 
 const defaultMember = {
@@ -98,13 +137,20 @@ const defaultMember = {
 export default {
   data() {
     return {
+      pageList: {
+        pageIndex: 1,
+        pageSize: 10,
+        total: 0
+      },
       member: Object.assign({}, defaultMember),
+      membermoney: {},
       members: [],
       options: [
         { value: 1, label: '女' },
         { value: 2, label: '男' }
       ],
       dialogVisible: false,
+      putMoneyDialogVisible: false,
       dialogType: 'new'
     }
   },
@@ -113,8 +159,10 @@ export default {
   },
   methods: {
     async getMembers() {
-      const res = await getMembers()
-      this.members = res.data
+      const res = await pageList(this.pageList)
+      this.pageList.total = res.data.total
+      this.pageList.pageIndex = res.data.pageIndex
+      this.members = res.data.pageList
     },
     async handleAddMember() {
       this.member = Object.assign({}, defaultMember)
@@ -125,6 +173,16 @@ export default {
     async getMemberCode() {
       const { data } = await getMemberCode()
       this.member.memberCode = data
+    },
+    handleSizeChange(val) {
+      this.pageList.pageSize = val
+      this.getMembers()
+      console.log(`每页 ${val} 条`)
+    },
+    handleCurrentChange(val) {
+      this.pageList.pageIndex = val
+      this.getMembers()
+      console.log(`当前页: ${val}`)
     },
     dateForment(column) {
       var date = column
@@ -137,6 +195,11 @@ export default {
       this.member = deepClone(row)
       this.dialogType = 'edit'
       this.dialogVisible = true
+    },
+    handlePutmoney(row) {
+      this.membermoney = deepClone(row)
+      this.membermoney.memberGUID = row.id
+      this.putMoneyDialogVisible = true
     },
     handleDelete({ $index, row }) {
       this.$confirm('确定删除这个会员吗？', '警告', {
@@ -154,7 +217,7 @@ export default {
         })
         .catch(err => { console.error(err) })
     },
-    async confirmRole() {
+    async confirmMember() {
       const isEdit = this.dialogType === 'edit'
 
       if (isEdit) {
@@ -175,6 +238,22 @@ export default {
             <div>会员名称: ${memberName}</div>
             <div>手机号码: ${phone}</div>
             <div>备注: ${remark}</div>
+          `,
+        type: 'success'
+      })
+    },
+    async confirmPutmoney() {
+      if (this.membermoney.putMoney === undefined || this.membermoney.putMoney === 0) {
+        alert('请输入金额')
+      }
+      await putMoney(this.membermoney)
+      this.putMoneyDialogVisible = false
+      this.$notify({
+        title: 'Success',
+        dangerouslyUseHTMLString: true,
+        message: `
+            <div>充值成功</div>
+            <div>充值金额: ${this.membermoney.putMoney}</div>
           `,
         type: 'success'
       })

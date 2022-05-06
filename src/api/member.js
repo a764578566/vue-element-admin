@@ -43,3 +43,19 @@ export function deleteMember(id) {
     method: 'delete'
   })
 }
+
+export function putMoney(data) {
+  return request({
+    url: '/member/PutMoney',
+    method: 'post',
+    data
+  })
+}
+
+export function pageList(data) {
+  return request({
+    url: '/member/PageList',
+    method: 'post',
+    data
+  })
+}
